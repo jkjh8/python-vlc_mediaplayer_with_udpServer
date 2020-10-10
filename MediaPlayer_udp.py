@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import sys, vlc, socket, os.path, threading
 from _thread import *
+from time import sleep
 
 instance = vlc.Instance()
 player = instance.media_player_new()
@@ -35,28 +36,48 @@ class media_Player():
         self.player = self.instance.media_player_new()
 
     def setEventManager(self):
-        self.Event_Manager = player.event_manager()
-        self.Event_Manager.event_attach(vlc.EventType.MediaPlayerEndReached, self.songFinished)
+        self.Event_Manager = self.player.event_manager()
+        self.Event_Manager.event_attach(vlc.EventType.MediaPlayerEndReached, self.songFinished) #meida end
+        self.Event_Manager.event_attach(vlc.EventType.MediaPlayerLengthChanged, self.getMediaLength, self.player) #media length
+        self.Event_Manager.event_attach(vlc.EventType.MediaPlayerTimeChanged, self.getCurrentTime, self.player) #emdia get currnet time
     
     def setMedia(self, mediaFile):
         self.media = self.instance.media_new(mediaFile)
         self.player.set_media(self.media)
 
     def play(self, mediaFile):
-        print(mediaFile)
-        if not self.player:
-            self.setNewPlayer()
-            print("media player refresh")
-        self.setEventManager()
-        self.setMedia(mediaFile)
-        self.player.play()
+        print("Play Media = {}".format(mediaFile))
+        print(self.player.get_state().value)
+        if not self.player.is_playing():
+            if not self.player:
+                self.setNewPlayer()
+                print("media player refresh")
+            self.setEventManager()
+            self.setMedia(mediaFile)
+            self.player.play()
+        self.player.set_time(0)
+        
+        
 
     def stop(self):
         self.player.stop()
-
-
+        
     def songFinished(self,evnet):
         print("song Finish")
+
+    def getMediaLength(self, time, player):
+        sendTime = self.timeFormat(time.u.new_length)
+        print(sendTime)
+
+    def getCurrentTime(self, time, player):
+        sendTime = self.timeFormat(time.u.new_time)
+        print(sendTime)
+
+    def timeFormat(self, ms):
+        time = ms/1000
+        min, sec = divmod(time, 60)
+        hour, min = divmod(min, 60)
+        return ("%02d:%02d:%02d" % (hour, min, sec))
 
 
 if __name__ == "__main__":
